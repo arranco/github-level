@@ -50,18 +50,21 @@ func main() {
 	presha := sha1.Sum([]byte(c))
 	c = ReplaceContent(stats, c)
 	postsha := sha1.Sum([]byte(c))
+	email := user.GetEmail()
+	if len(email) == 0 {
+		email = fmt.Sprintf("%s@github.com", user.GetName())
+	}
 	if presha != postsha {
 		_, _, err = client.Repositories.CreateFile(ctx, githubUser, "github-level", masterReadmeContents.GetPath(), &github.RepositoryContentFileOptions{
 			Message:   github.String(fmt.Sprintf("Github Level Update: Now %v!", stats.V1().Calculate())),
 			Content:   []byte(c),
 			SHA:       github.String(masterReadmeContents.GetSHA()),
 			Branch:    github.String("main"),
-			Committer: &github.CommitAuthor{Name: github.String("Automated " + github_level.PS(user.Name)), Email: user.Email},
+			Committer: &github.CommitAuthor{Name: github.String("Automated " + github_level.PS(user.Name)), Email: &email},
 		})
 		if err != nil {
 			log.Printf("Presha %v postsha %v", presha, postsha)
 			log.Printf("Master read me: %v %v %v %v", masterReadmeContents.GetPath(), masterReadmeContents.GetSHA(), masterReadmeContents.GetType(), MustStr(masterReadmeContents.GetContent()))
-			log.Printf("New contnets %v", c)
 			log.Panicf("Error creating/updating readme: %v", err)
 		}
 	} else {
